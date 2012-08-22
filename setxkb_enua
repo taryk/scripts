@@ -1,0 +1,2 @@
+#!/bin/sh
+setxkbmap us,ua -option grp_led:caps,grp:caps_toggle
