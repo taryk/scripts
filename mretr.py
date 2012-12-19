@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import pycurl
+import argparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -20,6 +21,8 @@ def human_bytes(num):
             return "%3.1f%s" % (num, x)
         num /= 1024.0
     return "%3.1f%s" % (num, 'TB')
+
+DEBUG=0
 
 class MultiDownloader:
 
@@ -38,7 +41,8 @@ class MultiDownloader:
         self.m.handles = []
         self.timestamp_start = time.time()
         self.content_length = self.get_contentlength()
-        print "Content length is: ", human_bytes(self.content_length)
+        if DEBUG:
+            print "DEBUG: Content length is: ", human_bytes(self.content_length)
         self.make_requests()
 
     def initial_req(self):
@@ -58,7 +62,8 @@ class MultiDownloader:
         return c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
         
     def make_curlobj(self, index, ranges = [0,0], chunk_size = 0):
-        print "going to create new curl object i:%d, range: [%d, %d], size: %d" % (index, ranges[0], ranges[1], chunk_size)
+        if DEBUG:
+            print "DEBUG: going to create new curl object i:%d, range: [%d, %d], size: %d" % (index, ranges[0], ranges[1], chunk_size)
         c = pycurl.Curl()
         c.setopt(pycurl.URL, self.url)
         c.setopt(pycurl.FOLLOWLOCATION, 1)
@@ -100,14 +105,14 @@ class MultiDownloader:
     def progress_line(self):
         self.speed = int(self.total_bytes / (time.time()-self.timestamp_start))
         self.eta = int((self.content_length - self.total_bytes) / self.speed)
-        output = "% 3d%% %s/s " % (self.total_bytes*100/self.content_length, human_bytes(self.speed))
+        output = "%3d%% %s/s " % (self.total_bytes*100/self.content_length, human_bytes(self.speed))
         for i in range(self.num_conn):
             output += "[%02d: %6s] " % (i, human_bytes(self.m.handles[i].done))
         output += "Spent: %s. ETA: %s" % (timedelta(seconds=self.timedelta_curr), timedelta(seconds=self.eta))
         sys.stdout.write('\r\x1b[K'+output)
         sys.stdout.flush()
 
-    def perform(self):
+    def perform(self, progress=False):
         num_processed = 0
         while num_processed < self.num_conn:
             # Run the internal curl state machine for the multi stack
@@ -132,12 +137,14 @@ class MultiDownloader:
             # We just call select() to sleep until some more data is available.
             self.m.select(1.0)
             self.timedelta_curr = int(time.time() - self.timestamp_start)
-            if self.timedelta_curr > self.timedelta_prev:
-                self.timedelta_prev = self.timedelta_curr
-                self.progress_line()
+            if progress:
+                if self.timedelta_curr > self.timedelta_prev:
+                    self.timedelta_prev = self.timedelta_curr
+                    self.progress_line()
 
-        self.progress_line()
-        sys.stdout.write('\n');
+        if progress: 
+            self.progress_line()
+            sys.stdout.write('\n');
         return True
 
     def result(self):
@@ -150,14 +157,16 @@ class MultiDownloader:
         self.f.close()
 
 if __name__ == '__main__':
-    url = ""
-    if len(sys.argv) >= 2:
-        url = sys.argv[1]
-    else:
-        print "URL is required"
-        sys.exit(1)
-    mdownloader = MultiDownloader(url)
-    if mdownloader.perform():
+    parser = argparse.ArgumentParser(prog='mretr', description='Multistream downloader')
+    parser.add_argument('url', metavar='URL', type=str, nargs=1, help='URL for download')
+    parser.add_argument('-n', type=int, default=5)
+    parser.add_argument('-p', '--progress', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
+    args = parser.parse_args()
+    DEBUG=args.debug
+    mdownloader = MultiDownloader(args.url[0], args.n)
+    if mdownloader.perform(args.progress):
         print mdownloader.result()
     else:
         print "Download failed"
