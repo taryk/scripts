@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import pycurl
+import hashlib
 import argparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -150,6 +151,21 @@ class MultiDownloader:
     def result(self):
         return "Total: %s (%d). Avg. speed: %s/s. Time: %s" % (human_bytes(self.total_bytes), self.total_bytes, human_bytes(self.total_bytes/self.timedelta_curr), timedelta(seconds=self.timedelta_curr))
 
+
+    def checksum(self, csum_type):
+        try:
+            hash_fn = {
+                'md5': hashlib.md5(),
+                'sha1': hashlib.sha1(),
+            }[csum_type]
+        except KeyError:
+            return "Unknown hashing algorithm"
+        with open(self.filename,'rb') as f: 
+            for chunk in iter(lambda: f.read(8192), b''):
+                hash_fn.update(chunk)
+        return hash_fn.hexdigest()
+            
+
     def cleanup(self):
         for c in self.m.handles:
             c.close()
@@ -162,12 +178,22 @@ if __name__ == '__main__':
     parser.add_argument('-n', type=int, default=5)
     parser.add_argument('-p', '--progress', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-md5', action='store_true')
+    parser.add_argument('-sha1', action='store_true')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
+    
     args = parser.parse_args()
     DEBUG=args.debug
     mdownloader = MultiDownloader(args.url[0], args.n)
+
     if mdownloader.perform(args.progress):
-        print mdownloader.result()
+        print mdownloader.result()          
     else:
         print "Download failed"
+
     mdownloader.cleanup()
+
+    if args.md5:
+        print "md5(", mdownloader.filename, "):", mdownloader.checksum('md5')
+    if args.sha1:
+        print "sha1(", mdownloader.filename, "):", mdownloader.checksum('sha1')
