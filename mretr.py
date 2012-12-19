@@ -53,6 +53,7 @@ class MultiDownloader:
         c.setopt(pycurl.FOLLOWLOCATION, 1)
         c.setopt(pycurl.MAXREDIRS, 5)
         c.setopt(pycurl.CONNECTTIMEOUT, 30)
+        c.setopt(pycurl.USERAGENT, 'mretr, ping')
         c.setopt(pycurl.TIMEOUT, 300)
         c.setopt(pycurl.NOSIGNAL, 1)
         c.perform()
@@ -71,6 +72,7 @@ class MultiDownloader:
         c.setopt(pycurl.MAXREDIRS, 5)
         c.setopt(pycurl.CONNECTTIMEOUT, 30)
         c.setopt(pycurl.NOSIGNAL, 1)
+        c.setopt(pycurl.USERAGENT, 'mretr, %d' % index)
         c.setopt(pycurl.RANGE, "%d-%d" % (ranges[0], ranges[1]))
         c.setopt(pycurl.WRITEFUNCTION, lambda data: self.chunk(data, index))
         c.seek = ranges[0]
