@@ -155,13 +155,7 @@ class MultiDownloader:
 
 
     def checksum(self, csum_type):
-        try:
-            hash_fn = {
-                'md5': hashlib.md5(),
-                'sha1': hashlib.sha1(),
-            }[csum_type]
-        except KeyError:
-            return "Unknown hashing algorithm"
+        hash_fn = hashlib.new(csum_type)
         with open(self.filename,'rb') as f: 
             for chunk in iter(lambda: f.read(8192), b''):
                 hash_fn.update(chunk)
@@ -180,8 +174,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', type=int, default=5)
     parser.add_argument('-p', '--progress', action='store_true')
     parser.add_argument('-d', '--debug', action='store_true')
-    parser.add_argument('-md5', action='store_true')
-    parser.add_argument('-sha1', action='store_true')
+    parser.add_argument('-c', '--checksum', nargs='+', choices=hashlib.algorithms)
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
     
     args = parser.parse_args()
@@ -195,7 +188,7 @@ if __name__ == '__main__':
 
     mdownloader.cleanup()
 
-    if args.md5:
-        print "md5(", mdownloader.filename, "):", mdownloader.checksum('md5')
-    if args.sha1:
-        print "sha1(", mdownloader.filename, "):", mdownloader.checksum('sha1')
+    if args.checksum:
+        print "== '%s' checksum ====" % mdownloader.filename
+        for checksum in args.checksum:
+            print "%s\t%s" % (checksum, mdownloader.checksum(checksum))
