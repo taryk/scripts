@@ -64,7 +64,7 @@ class MultiDownloader:
         
     def make_curlobj(self, index, ranges = [0,0], chunk_size = 0):
         if DEBUG:
-            print "DEBUG: going to create new curl object i:%d, range: [%d, %d], size: %d" % (index, ranges[0], ranges[1], chunk_size)
+            print "DEBUG: going to create new curl object i:%2d, range: [%10d, %10d], size: %d" % (index, ranges[0], ranges[1], chunk_size)
         c = pycurl.Curl()
         c.setopt(pycurl.URL, self.url)
         c.setopt(pycurl.FOLLOWLOCATION, 1)
