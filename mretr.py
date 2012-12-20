@@ -66,9 +66,9 @@ class MultiDownloader:
         c = self.initial_req()
         return c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
         
-    def make_curlobj(self, index, ranges = [0,0], chunk_size = 0):
+    def make_curlobj(self, index, ranges = [0,0], chunk_size = None):
         if DEBUG:
-            print "DEBUG: going to create new curl object i:%2d, range: [%10d, %10d], size: %d" % (index, ranges[0], ranges[1], chunk_size)
+            print "DEBUG: going to create new curl object i:%2d, range: [%10d, %10d], size: %s" % (index, ranges[0], ranges[1], chunk_size)
         c = pycurl.Curl()
         c.setopt(pycurl.URL, self.url)
         c.setopt(pycurl.FOLLOWLOCATION, 1)
@@ -76,10 +76,11 @@ class MultiDownloader:
         c.setopt(pycurl.CONNECTTIMEOUT, 30)
         c.setopt(pycurl.NOSIGNAL, 1)
         c.setopt(pycurl.USERAGENT, 'mretr, %d' % index)
-        c.setopt(pycurl.RANGE, "%d-%d" % (ranges[0], ranges[1]))
+        if ranges[1] > 0:
+            c.setopt(pycurl.RANGE, "%d-%d" % (ranges[0], ranges[1]))
         c.setopt(pycurl.WRITEFUNCTION, lambda data: self.chunk(data, index))
         c.seek = ranges[0]
-        c.size = chunk_size
+        c.size = chunk_size if chunk_size else self.content_length
         c.done = 0
         c.time = time.time()
         return c
@@ -94,19 +95,27 @@ class MultiDownloader:
         return length
 
     def make_requests(self):
-        chunk_s = int(self.content_length / self.num_conn)
-        last_s = self.content_length % self.num_conn
-        for i in range(self.num_conn):
-            ranges = [ chunk_s*i, 0 ]
-            chunk_size = chunk_s
-            if i==self.num_conn-1:
-                ranges[1] = self.content_length
-                chunk_size+=last_s
-            else:
-                ranges[1] = chunk_s*(i+1)
-            curlobj = self.make_curlobj(i, ranges, chunk_size)
+
+        def add_handle(curlobj):
             self.m.handles.append(curlobj)
             self.m.add_handle(curlobj)
+
+        if self.num_conn > 1:
+            chunk_s = int(self.content_length / self.num_conn)
+            last_s = self.content_length % self.num_conn
+            for i in range(self.num_conn):
+                ranges = [ chunk_s*i, 0 ]
+                chunk_size = chunk_s
+                if i==self.num_conn-1:
+                    ranges[1] = self.content_length
+                    chunk_size+=last_s
+                else:
+                    ranges[1] = chunk_s*(i+1)
+                add_handle(self.make_curlobj(i, ranges, chunk_size))
+        else:
+            add_handle(self.make_curlobj(0))
+            
+                
 
     def progress_line(self):
         self.speed = int(self.total_bytes / (time.time()-self.timestamp_start))
@@ -151,6 +160,7 @@ class MultiDownloader:
         if progress: 
             self.progress_line()
             sys.stdout.write('\n');
+
         return True
 
     def result(self):
@@ -163,8 +173,7 @@ class MultiDownloader:
             for chunk in iter(lambda: f.read(8192), b''):
                 hash_fn.update(chunk)
         return hash_fn.hexdigest()
-            
-
+    
     def cleanup(self):
         for c in self.m.handles:
             c.close()
