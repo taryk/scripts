@@ -174,11 +174,11 @@ class MultiDownloader:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='mretr', description='Multistream downloader')
     parser.add_argument('url', metavar='URL', type=str, nargs=1, help='URL for download')
-    parser.add_argument('-o', '--output', action='store')
-    parser.add_argument('-n', type=int, default=5)
-    parser.add_argument('-p', '--progress', action='store_true')
-    parser.add_argument('-d', '--debug', action='store_true')
-    parser.add_argument('-c', '--checksum', nargs='+', choices=hashlib.algorithms)
+    parser.add_argument('-o', '--output', metavar='FILE', action='store', help='Write data to FILE')
+    parser.add_argument('-n', type=int, default=5, help='Number of parallel streams')
+    parser.add_argument('-p', '--progress', action='store_true', help='Display progress information')
+    parser.add_argument('-d', '--debug', action='store_true', help='Display debugging messages')
+    parser.add_argument('-c', '--checksum', nargs='+', choices=hashlib.algorithms, help='Calculate the checksum on the file after downloading')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
     
     args = parser.parse_args()
