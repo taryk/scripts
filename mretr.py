@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 import sys
 import time
 import pycurl
@@ -23,6 +24,16 @@ def human_bytes(num):
         num /= 1024.0
     return "%3.1f%s" % (num, 'TB')
 
+def prompt_overwrite(filename):
+    yn = raw_input('File "%s" already exists. Overwrite it? [y/N]: ' % filename)
+    while True:
+        if yn == 'y' or yn == 'yes':
+            return True
+        elif (yn == 'n' or yn == 'no') or len(yn) == 0:
+            return False
+        else: 
+            yn = raw_input('Please enter y/yes or n/no: ')
+
 DEBUG=0
 
 class MultiDownloader:
@@ -33,13 +44,19 @@ class MultiDownloader:
     timedelta_curr = 0
     timedelta_prev = 0
 
-    def __init__(self, url, output=None, num_conn=5):
+    def __init__(self, url, output=None, num_conn=5, overwrite=False):
         self.url = url
         self.num_conn = num_conn
         if output is None:
-            self.filename = os.path.basename(url)
+            self.filename = os.path.basename(self.url)
         else:
             self.filename = output
+        if not overwrite and os.path.exists(self.filename) and not prompt_overwrite(self.filename):
+            while os.path.exists(self.filename):
+                self.filename, n = re.subn(r'\.(\d+)$', lambda x: '.%d' % (int(x.group(1))+1), self.filename)
+                if n <= 0:
+                    self.filename+='.0'
+                      
         self.f = open(self.filename, 'w')
         self.m = pycurl.CurlMulti()
         self.m.handles = []
@@ -47,8 +64,8 @@ class MultiDownloader:
         self.content_length = self.get_contentlength()
         if DEBUG:
             print "DEBUG: Content length is: ", human_bytes(self.content_length)
-        self.make_requests()
-
+        self.make_requests()          
+    
     def initial_req(self):
         c = pycurl.Curl()
         c.setopt(pycurl.NOBODY, 1)
@@ -187,12 +204,13 @@ if __name__ == '__main__':
     parser.add_argument('-n', type=int, default=5, help='Number of parallel streams')
     parser.add_argument('-p', '--progress', action='store_true', help='Display progress information')
     parser.add_argument('-d', '--debug', action='store_true', help='Display debugging messages')
+    parser.add_argument('--overwrite', action='store_true', help='Overwrite existing file')
     parser.add_argument('-c', '--checksum', nargs='+', choices=hashlib.algorithms, help='Calculate the checksum on the file after downloading')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
     
     args = parser.parse_args()
     DEBUG=args.debug
-    mdownloader = MultiDownloader(args.url[0], args.output, args.n)
+    mdownloader = MultiDownloader(args.url[0], args.output, args.n, args.overwrite)
 
     if mdownloader.perform(args.progress):
         print mdownloader.result()          
