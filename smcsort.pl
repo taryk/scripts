@@ -259,6 +259,6 @@ The script for sorting your music collection
 
 =head1 AUTHOR
 
-(c) 2012 Taras Yagniuk <mrtaryk@gmail.com>
+(c) 2013 Taras Iagniuk <mrtaryk@gmail.com>
 
 =cut
