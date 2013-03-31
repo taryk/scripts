@@ -13,10 +13,6 @@ use Getopt::Long;
 use Sys::Syslog qw(:DEFAULT :macros);
 
 use Carp qw[croak carp confess];
-use Data::Printer;
-
-# use lib dirname(__FILE__).'/libs';
-
 BEGIN {
   openlog $0, 'ndelay,pid', 'local4';
   syslog(LOG_INFO, 'started');
