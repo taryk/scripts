@@ -1,0 +1,14 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Net::DBus::Skype;
+use Env qw(DEBUG VERBOSE);
+
+my $debug = $DEBUG || $VERBOSE || 0;
+
+my $skype = Net::DBus::Skype
+	->new({ debug => $debug })
+	->action( shift @ARGV )
+;
+
+1;
