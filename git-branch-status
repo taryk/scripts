@@ -1,0 +1,32 @@
+#!/bin/bash
+# modified from https://gist.github.com/1288596 by http://github.com/jehiah
+# JAN 01 2013 by http://github.com/zeroeth
+#
+# Show distance between local master and remote branches
+
+
+# list how far apart from local master each branch is
+echo "Distance from master:"
+git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads | \
+while read local remote
+do
+  git rev-list --left-right ${local}...master -- 2>/dev/null >/tmp/git_upstream_status_delta || continue
+  LEFT_AHEAD=$(grep -c '^<' /tmp/git_upstream_status_delta)
+  RIGHT_AHEAD=$(grep -c '^>' /tmp/git_upstream_status_delta)
+  echo "$local (ahead $LEFT_AHEAD) | (behind $RIGHT_AHEAD) master"
+done
+
+
+# also list how far out of sync locals are with their remotes
+echo ""
+echo "Distance from own remote:"
+
+git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads | \
+while read local remote
+do
+  [ -z "$remote" ] && continue
+  git rev-list --left-right ${local}...${remote} -- 2>/dev/null >/tmp/git_upstream_status_delta || continue
+  LEFT_AHEAD=$(grep -c '^<' /tmp/git_upstream_status_delta)
+  RIGHT_AHEAD=$(grep -c '^>' /tmp/git_upstream_status_delta)
+  echo "$local (ahead $LEFT_AHEAD) | (behind $RIGHT_AHEAD) $remote"
+done
