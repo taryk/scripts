@@ -11,7 +11,7 @@ HOST     = 'translate.google.com'
 
 def argparser():
     parser = argparse.ArgumentParser(description='Instant Translator')
-    parser.add_argument('phrase', metavar='p', type=unicode,
+    parser.add_argument('phrase', metavar='p', type=str,
                         help='phrase to translate')
     args = parser.parse_args()
     return args.phrase
