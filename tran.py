@@ -37,7 +37,7 @@ def parse_item(item, depth = 0):
     else:
         return u''
 
-if __name__ == '__main__':
+def main():
     phrase = argparser()
     path = 'translate_a/t?client=t&sl=' + SRC_LANG + '&tl=' + TO_LANG + '&' + urllib.urlencode({'text' : phrase})
     response = re.sub(',{2,}', ',', retrieve(HOST, "/" + path))
@@ -55,3 +55,6 @@ if __name__ == '__main__':
         print result.encode('utf8')
     except RuntimeError as ex:
         print u'Something went wrong ({}): {}'.format(response, ex)
+
+if __name__ == '__main__':
+    main()
