@@ -1,0 +1,82 @@
+#!/bin/bash
+
+set -u
+
+SS_DELAY=5
+SS_OUTPUT="${HOME}/Pictures/Screenshots/$(date +%F_%H%M%S_%N).png"
+SS_WINDOW=''
+
+# parse arguments
+while test $# -gt 0; do
+    case "$1" in
+        -d|--delay)
+            shift
+            if test $# -gt 0; then
+                    SS_DELAY=$1
+            else
+                    echo "no delay specified"
+                    exit 1
+            fi
+            shift
+            ;;
+        -a|--active)
+            shift
+            SS_WINDOW="-window \"$(xdotool getwindowfocus -f)\"";
+            ;;
+        -r|--root)
+            shift
+            SS_WINDOW="-window root";
+            ;;
+        -w|--window)
+            shift
+            if test $# -gt 0; then
+                    SS_WINDOW=$1
+            else
+                    echo "no window specified"
+                    exit 1
+            fi
+            shift
+            ;;
+        -o|--output)
+            shift
+            if test $# -gt 0; then
+                    SS_OUTPUT=$1
+            else
+                    echo "no output file specified"
+                    exit 1
+            fi
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: screenshot [-d DELAY] [-a] [-r] [-w WINDOW] [-o FILE] [-h]"
+            echo
+            echo "screenshot"
+            echo
+            echo "optional arguments:"
+            echo -e "\t-d, --delay DELAY\tdelay, in seconds, before taking screenshot"
+            echo -e "\t-a, --active\t\ttake screenshot of active window"
+            echo -e "\t-r, --root\t\ttake screenshot of root window"
+            echo -e "\t-w, --window WINDOW\tspecify a WINDOW to take screenshot"
+            echo -e "\t-o, --output FILE\twrite screenshot to a FILE"
+            echo -e "\t-h, --help\t\tshow this help message and exit"
+            exit
+    esac
+done
+
+# wait few seconds before taking screenshot...
+if [ $SS_DELAY -gt 0 ]; then
+    for I in $(eval echo {$SS_DELAY..1}); do
+        echo -n "${I}... "
+        sleep 1;
+    done
+    echo
+fi
+
+# Create directory if needed
+if [ ! -d "$(dirname $SS_OUTPUT)" ]; then
+    mkdir -p $(dirname $SS_OUTPUT)
+fi
+
+# take a screenshot
+import $SS_WINDOW "$SS_OUTPUT"
+echo "\"${SS_OUTPUT}\" is saved"
