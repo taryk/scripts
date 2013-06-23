@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 require 'net/http'
+require 'uri'
 require 'json'
 require 'pp'
 
@@ -10,10 +11,14 @@ TO_LANG  = 'uk'
 URL      = 'http://translate.google.com/translate_a/t'
 
 def retrieve(params)
-  uri = URI(URL)
+  uri = URI.parse(URL)
   uri.query = URI.encode_www_form(params)
-  res = Net::HTTP.get_response(uri)
-  return res
+  http = Net::HTTP.new(uri.host)
+  request = Net::HTTP::Get.new(uri.request_uri)
+  request['Accept-Charset'] = 'utf-8'
+  request['User-Agent'] = 'Mozilla/5.0'
+  response = http.request(request)
+  return response
 end
 
 def get_result(data)
@@ -40,13 +45,7 @@ def get_result(data)
   end
 
   parse_item.call(data, -1)
-  #output = output.encode('UTF-8',:invalid=>:replace, :replace=>"?")
-  if output.valid_encoding?
-    puts "valid\n"
-  else
-    puts "invalid\n"
-  end
-  # return ''
+  # output = output.encode('UTF-8',:invalid=>:replace, :replace=>"?")
   return output
 end
 
