@@ -32,22 +32,44 @@ for FILE in $CHANGED_FILES; do
     [ ${#FILE} -gt $MAXLENGTH ] && MAXLENGTH=${#FILE}
 done
 
+printf "%-*b %6b %6b %6b\n" $MAXLENGTH "Filename" "Syntax" "Critic" "POD"
+
 # add extra 11 of length to compensate espace characters
 # (7 of 'color' + 4 of 'no color')
 MAXLENGTH=$(($MAXLENGTH+11))
 
 EXITCODE=0
+
 for FILE in $CHANGED_FILES; do
+    FILE_OK=1
     perl -Ilib -c $FILE > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        FILE="${COLOR_WHITE}${FILE}${COLOR_NC}"
-        RESULT="${COLOR_LIGHT_GREEN}OK${COLOR_NC}"
+        SYN_RESULT="${COLOR_LIGHT_GREEN}OK${COLOR_NC}"
     else
-        EXITCODE=1
-        FILE="${COLOR_LIGHT_RED}${FILE}${COLOR_NC}"
-        RESULT="${COLOR_RED}FAIL${COLOR_NC}"
+        FILE_OK=0
+        SYN_RESULT="${COLOR_RED}FAIL${COLOR_NC}"
     fi
-    printf "%-*b %-40b\n" $MAXLENGTH $FILE $RESULT
+    perlcritic $FILE > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        CRITIC_RESULT="${COLOR_LIGHT_GREEN}OK${COLOR_NC}"
+    else
+        FILE_OK=0
+        CRITIC_RESULT="${COLOR_RED}FAIL${COLOR_NC}"
+    fi
+    podchecker $FILE > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        POD_RESULT="${COLOR_LIGHT_GREEN}OK${COLOR_NC}"
+    else
+        FILE_OK=0
+        POD_RESULT="${COLOR_RED}FAIL${COLOR_NC}"
+    fi
+    if [ $FILE_OK -eq 1 ]; then
+        FILE="${COLOR_WHITE}${FILE}${COLOR_NC}"
+    else
+        FILE="${COLOR_LIGHT_RED}${FILE}${COLOR_NC}"
+    fi
+    printf "%-*b %17b %17b %17b\n" $MAXLENGTH $FILE $SYN_RESULT $CRITIC_RESULT $POD_RESULT
+    [ $FILE_OK -eq 0 ] && EXITCODE=1
 done
 
 cd $CURRENT_DIR
