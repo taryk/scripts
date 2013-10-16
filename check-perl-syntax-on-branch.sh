@@ -57,8 +57,11 @@ for FILE in $CHANGED_FILES; do
         CRITIC_RESULT="${COLOR_RED}FAIL${COLOR_NC}"
     fi
     podchecker $FILE > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
+    PODCHECKER_EXITCODE=$?
+    if [ $PODCHECKER_EXITCODE -eq 0 ]; then
         POD_RESULT="${COLOR_LIGHT_GREEN}OK${COLOR_NC}"
+    elif [ $PODCHECKER_EXITCODE -eq 2 ]; then
+        POD_RESULT="${COLOR_YELLOW}N/A${COLOR_NC}"
     else
         FILE_OK=0
         POD_RESULT="${COLOR_RED}FAIL${COLOR_NC}"
