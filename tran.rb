@@ -52,7 +52,7 @@ end
 def main
   params = { :client => 't', :sl => SRC_LANG, :tl => TO_LANG }
   params[:text] = ARGV[0]
-  data = JSON.parse(retrieve(params).body.gsub(/,{2,}/, ','))
+  data = JSON.parse(retrieve(params).body.gsub(/,{2,}/, ',').gsub(/\[,/,'[').gsub(/,\]/,']'))
   puts "Translation: %s > %s\n\n" % [ SRC_LANG, TO_LANG ]
   puts get_result(data)
 end
