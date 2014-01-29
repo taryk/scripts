@@ -40,9 +40,7 @@ def parse_item(item, depth = 0):
 def main():
     phrase = argparser()
     path = 'translate_a/t?client=t&sl=' + SRC_LANG + '&tl=' + TO_LANG + '&' + urllib.urlencode({'text' : phrase})
-    response = re.sub(',{2,}', ',', retrieve(HOST, "/" + path))
-    response = response.replace('[,', '[')
-    response = response.replace(',]', ']')
+    response = re.sub(',{2,}', ',', retrieve(HOST, "/" + path)).replace('[,', '[').replace(',]', ']')
     try:
         # translated = eval(response)
         translated = json.loads(response)
